@@ -4,7 +4,7 @@ from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging.models import TextMessage
+from linebot.v3.messaging.models import Event, TextMessage
 from gpt import chat_with_gpt
 import logging
 
@@ -60,8 +60,8 @@ def handle_message(event: Event):
 
         line_bot_api.reply_message(
             event.reply_token,
-            # TextMessage(text=reply_text)
-            TextMessage(text='Hello, World!')  # 回覆固定訊息
+            TextMessage(text=reply_text)
+            # TextMessage(text='Hello, World!')  # 回覆固定訊息
         )
 # 應用程序入口點
 if __name__ == "__main__":
