@@ -4,7 +4,7 @@ from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging.models import Event, TextMessage
+from linebot.v3.messaging.models import TextMessage
 from gpt import chat_with_gpt
 import logging
 
