@@ -5,6 +5,7 @@ from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
+from linebot.models import MessageEvent, TextMessage
 from gpt import chat_with_gpt
 import logging
 
@@ -49,7 +50,7 @@ def callback():
     return 'OK'
 
 # 設置一個事件處理器來處理 TextMessage 事件
-@handler.add(Event)
+@handler.add(MessageEvent, message=TextMessage)
 def handle_message(event: Event):
     if event.message.type == "text":
         user_message = event.message.text  # 使用者的訊息
