@@ -1,14 +1,3 @@
-#from flask import Flask
-
-#app = Flask(__name__)
-
-#@app.route("/")
-#def hello():
-#    return "Hello, Flask!"
-
-#if __name__ == "__main__":
-#    app.run()
-
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
@@ -17,6 +6,7 @@ from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
 from gpt import chat_with_gpt
+import logging
 
 # 加載 .env 文件中的變數
 load_dotenv()
@@ -37,6 +27,8 @@ handler = WebhookHandler(line_secret)
 
 # 創建 Flask 應用
 app = Flask(__name__)
+
+app.logger.setLevel(logging.DEBUG)
 
 # 設置一個路由來處理 LINE Webhook 的回調請求
 @app.route("/", methods=['POST'])
