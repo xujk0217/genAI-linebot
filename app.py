@@ -68,7 +68,8 @@ def handle_message(event: Event):
 
         line_bot_api.reply_message(
             event.reply_token,
-            TextMessage(text=reply_text)
+            # TextMessage(text=reply_text)
+            TextMessage(text='Hello, World!')  # 回覆固定訊息
         )
 # 應用程序入口點
 if __name__ == "__main__":
