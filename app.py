@@ -15,7 +15,7 @@ from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging.models import ReplyMessageRequest, Message
+from linebot.v3.messaging.models import TextMessage
 from gpt import chat_with_gpt
 
 # 加載 .env 文件中的變數
@@ -66,14 +66,9 @@ def handle_message(event: Event):
         # 使用 GPT 生成回應
         reply_text = chat_with_gpt(user_message)
 
-        # 回應用戶
-        reply_request = ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[Message(type="text", text=reply_text)]
-        )
         line_bot_api.reply_message(
             event.reply_token,
-            Message(type="text", text=reply_text)  # 修改為line_bot_api.reply_message
+            TextMessage(text=reply_text)
         )
 # 應用程序入口點
 if __name__ == "__main__":
