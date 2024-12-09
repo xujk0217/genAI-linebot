@@ -71,7 +71,10 @@ def handle_message(event: Event):
             reply_token=event.reply_token,
             messages=[Message(type="text", text=reply_text)]
         )
-        messaging_api.reply_message(reply_request)
+        line_bot_api.reply_message(
+            event.reply_token,
+            Message(type="text", text=reply_text)  # 修改為line_bot_api.reply_message
+        )
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
