@@ -5,7 +5,9 @@ from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
+from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage
+from linebot.exceptions import InvalidSignatureError
 from gpt import chat_with_gpt
 import logging
 
@@ -23,7 +25,7 @@ if not line_token or not line_secret:
     raise ValueError("LINE_TOKEN 或 LINE_SECRET 未設置")
 
 # 初始化 LineBotApi 和 WebhookHandler
-line_bot_api = MessagingApi(line_token)
+line_bot_api = LineBotApi(line_token)
 handler = WebhookHandler(line_secret)
 
 # 創建 Flask 應用
