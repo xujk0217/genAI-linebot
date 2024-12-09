@@ -12,9 +12,11 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.v3.messaging import MessagingApi
+from linebot.v3.webhook import WebhookHandler, Event
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging.models import ReplyMessageRequest, Message
+from gpt import chat_with_gpt
 
 # 加載 .env 文件中的變數
 load_dotenv()
@@ -30,7 +32,7 @@ if not line_token or not line_secret:
     raise ValueError("LINE_TOKEN 或 LINE_SECRET 未設置")
 
 # 初始化 LineBotApi 和 WebhookHandler
-line_bot_api = LineBotApi(line_token)
+line_bot_api = MessagingApi(line_token)
 handler = WebhookHandler(line_secret)
 
 # 創建 Flask 應用
@@ -55,12 +57,21 @@ def callback():
     return 'OK'
 
 # 設置一個事件處理器來處理 TextMessage 事件
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    # 回覆用戶發送的訊息
-    reply_text = f"你說了: {event.message.text}"
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+@handler.add(Event)
+def handle_message(event: Event):
+    if event.message.type == "text":
+        user_message = event.message.text  # 使用者的訊息
+        app.logger.info(f"收到的訊息: {user_message}")
 
+        # 使用 GPT 生成回應
+        reply_text = chat_with_gpt(user_message)
+
+        # 回應用戶
+        reply_request = ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[Message(type="text", text=reply_text)]
+        )
+        messaging_api.reply_message(reply_request)
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
