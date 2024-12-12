@@ -9,5 +9,3 @@
     2. 設定 
         1. Start Command：python app.py
         2. Build Command：pip install -r requirements.txt
-
-
