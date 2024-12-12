@@ -2,3 +2,4 @@ python-dotenv
 openai
 flask
 line-bot-sdk
+twstock
