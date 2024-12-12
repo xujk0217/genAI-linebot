@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 load_dotenv()
 import openai
 import requests
+import json
+import logging
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -64,31 +66,28 @@ def get_stock_data(symbol: str, interval: str = "5min", outputsize: str = "compa
     else:
         return "無法連接至 Alpha Vantage API，請稍後再試。"
 
+
 def parse_user_input(prompt: str) -> dict:
     """
     使用 GPT 解析使用者輸入，提取股票相關參數或判斷為一般問題。
     """
     try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一個幫助解析輸入內容的助手，請從使用者輸入中提取相關股票資訊。如果無法提取，請回傳'其他問題'。輸出格式為JSON，如：{\"type\": \"stock\", \"symbol\": \"TSLA\", \"interval\": \"5min\", \"outputsize\": \"compact\", \"month\": null}。"},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000,
-            temperature=0.5
-        )
+        response = openai.chat.completions.create(...)
         content = response.choices[0].message.content
-        return eval(content)  # 將回應轉為字典
-    except Exception as e:
-        print(f"解析錯誤: {e}")
-        return {"type": "error", "message": "解析失敗，請稍後再試。"}
+        return json.loads(content)  # Safer alternative to eval()
+    except json.JSONDecodeError as e:
+        print(f"JSON parse error: {e}")
+        return {"type": "error", "message": "解析錯誤"}
 
 def chat_with_gpt(prompt: str) -> str:
     """
     處理使用者輸入，結合 OpenAI 和 Alpha Vantage API 回應。
     """
     try:
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        logger.info("Received user input: %s", prompt)
         # 使用 GPT 解析使用者輸入
         parsed_input = parse_user_input(prompt)
 
