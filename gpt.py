@@ -4,6 +4,8 @@ load_dotenv()
 import openai
 import twstock
 import re
+from app import app
+import logging
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -33,10 +35,12 @@ def extract_stock_id(user_input: str) -> str:
         # 從 API 回應中提取文字
         ai_response = response.choices[0].message.content
         print(f"OpenAI API response: {ai_response}")
+        app.logger.info(f"OpenAI API response: {ai_response}")
         match = re.search(r'\b\d{4,6}\b', ai_response)
         return match.group(0) if match else None
     except Exception as e:
         print(f"Error contacting OpenAI API: {e}")
+        app.logger.info(f"Error contacting OpenAI API: {e}")
         return None
 
 def get_stock_info(stock_id: str) -> str:

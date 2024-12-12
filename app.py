@@ -8,7 +8,6 @@ from linebot.v3.messaging.models import TextMessage
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage
 from linebot.exceptions import InvalidSignatureError
-from gpt import chat_with_gpt
 from gpt import process_user_input
 import logging
 
