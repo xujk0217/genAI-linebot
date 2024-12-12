@@ -10,15 +10,22 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def extract_stock_id(user_input: str) -> str:
     """
-    請求 OpenAI API 提取股票代號。
+    從使用者輸入中提取股票代號。
+    股票代號應為 4~6 位的數字。
+    如果沒有找到，請求 OpenAI API 提取股票代號。
     """
+    # 嘗試從使用者輸入中提取股票代號
+    match = re.search(r'\b\d{4,6}\b', user_input)
+    if match:
+        return match.group(0)
+
     # 如果沒有找到，請求 OpenAI API 協助提取
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",  # 或其他你設定的模型
             messages=[
                 {"role": "system", "content": "你是一個可以提取股票代號的助手。"},
-                {"role": "user", "content": f"請從這段文字中提取股票代號：{user_input}，沒有的話不要回傳數字"}
+                {"role": "user", "content": f"請從這段文字中提取股票代號或是一句內容提到的公司回答該公司的股票代號：{user_input}，如果沒有找到與公司相關的資訊的話，不要回傳數字"}
             ]
         )
         # 從 API 回應中提取文字
