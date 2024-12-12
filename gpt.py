@@ -75,7 +75,7 @@ def parse_user_input(prompt: str) -> dict:
                 {"role": "system", "content": "你是一個幫助解析輸入內容的助手，請從使用者輸入中提取相關股票資訊。如果無法提取，請回傳'其他問題'。輸出格式為JSON，如：{\"type\": \"stock\", \"symbol\": \"TSLA\", \"interval\": \"5min\", \"outputsize\": \"compact\", \"month\": null}。"},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=100,
+            max_tokens=1000,
             temperature=0.5
         )
         content = response.choices[0].message.content
@@ -114,7 +114,7 @@ def chat_with_gpt(prompt: str) -> str:
                     {"role": "system", "content": "你是一個使用繁體中文的聊天機器人。"},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=100,
+                max_tokens=1000,
                 temperature=0.7
             )
 
