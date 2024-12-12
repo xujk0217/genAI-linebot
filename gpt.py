@@ -2,11 +2,40 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import openai
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 import requests
 
-# Alpha Vantage API 設定
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def chat_with_gpt(prompt: str) -> str:
+    
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo", 
+            messages=[
+                {"role": "system", "content": "你是一個使用繁體中文的聊天機器人。"},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=100,
+            temperature=0.7
+        )
+        # Print Response
+        print(response.choices[0].message.content)
+        return response.choices[0].message.content
+    
+    except openai.error.OpenAIError as e:
+        # 處理 OpenAI API 的特定錯誤
+        print(f"GPT API 錯誤: {e}")
+        return "抱歉，我無法回應您的問題，請稍後再試。"
+
+    except Exception as e:
+        # 處理未知錯誤
+        print(f"未知錯誤: {e}")
+        return "抱歉，我無法回應您的問題，請稍後再試。"
+    
+
+
+#---------------------------------------------------
+# Test
 ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 
@@ -35,51 +64,61 @@ def get_stock_data(symbol: str, interval: str = "5min", outputsize: str = "compa
     else:
         return "無法連接至 Alpha Vantage API，請稍後再試。"
 
+def parse_user_input(prompt: str) -> dict:
+    """
+    使用 GPT 解析使用者輸入，提取股票相關參數或判斷為一般問題。
+    """
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "你是一個幫助解析輸入內容的助手，請從使用者輸入中提取相關股票資訊。如果無法提取，請回傳'其他問題'。輸出格式為JSON，如：{\"type\": \"stock\", \"symbol\": \"TSLA\", \"interval\": \"5min\", \"outputsize\": \"compact\", \"month\": null}。"},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=100,
+            temperature=0.5
+        )
+        content = response.choices[0].message.content
+        return eval(content)  # 將回應轉為字典
+    except Exception as e:
+        print(f"解析錯誤: {e}")
+        return {"type": "error", "message": "解析失敗，請稍後再試。"}
+
 def chat_with_gpt(prompt: str) -> str:
     """
     處理使用者輸入，結合 OpenAI 和 Alpha Vantage API 回應。
     """
     try:
-        # 判斷使用者是否輸入股票相關查詢
-        if "查詢" in prompt and "股票" in prompt:
-            # 從輸入中提取股票代碼
-            parts = prompt.split()
-            if len(parts) >= 2:
-                symbol = parts[1].upper()  # 股票代碼轉為大寫
-                interval = "5min"
-                outputsize = "compact"
-                month = None
+        # 使用 GPT 解析使用者輸入
+        parsed_input = parse_user_input(prompt)
 
-                # 處理額外參數（選擇性）
-                if "完整" in prompt:
-                    outputsize = "full"
-                if "月份" in prompt:
-                    month = prompt.split("月份")[-1].strip()
+        if parsed_input.get("type") == "stock":
+            # 股票相關查詢
+            symbol = parsed_input.get("symbol")
+            interval = parsed_input.get("interval", "5min")
+            outputsize = parsed_input.get("outputsize", "compact")
+            month = parsed_input.get("month")
 
-                # 查詢股票 API
-                stock_response = get_stock_data(symbol, interval, outputsize, month)
-                return stock_response
-            else:
-                return "請提供有效的股票代碼，例如：查詢 TSLA 股票。"
+            # 查詢股票 API
+            stock_response = get_stock_data(symbol, interval, outputsize, month)
+            return stock_response
 
-        # 使用 OpenAI 處理一般問題
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一個使用繁體中文的聊天機器人。"},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=100,
-            temperature=0.7
-        )
+        elif parsed_input.get("type") == "error":
+            return parsed_input.get("message", "解析失敗，請稍後再試。")
 
-        return response.choices[0].message.content
+        else:
+            # 使用 OpenAI GPT 處理其他一般問題
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "你是一個使用繁體中文的聊天機器人。"},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=100,
+                temperature=0.7
+            )
 
-    except openai.error.OpenAIError as e:
-        # 處理 OpenAI API 的特定錯誤
-        print(f"GPT API 錯誤: {e}")
-        return "抱歉，我無法回應您的問題，請稍後再試。"
-
+            return response.choices[0].message.content
     except Exception as e:
         # 處理未知錯誤
         print(f"未知錯誤: {e}")
