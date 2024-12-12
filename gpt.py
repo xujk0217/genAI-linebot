@@ -8,43 +8,26 @@ import re
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# def chat_with_gpt(prompt: str) -> str:
-    
-#     try:
-#         stock = twstock.Stock('2330')
-#         response = openai.chat.completions.create(
-#             model="gpt-3.5-turbo", 
-#             messages=[
-#                 {"role": "system", "content": "你是一個使用繁體中文的聊天機器人。"},
-#                 {"role": "user", "content": prompt}
-#             ],
-#             max_tokens=1000,
-#             temperature=0.7
-#         )
-#         # Print Response
-#         print(response.choices[0].message.content)
-#         return response.choices[0].message.content
-    
-#     except openai.error.OpenAIError as e:
-#         # 處理 OpenAI API 的特定錯誤
-#         print(f"GPT API 錯誤: {e}")
-#         return "抱歉，我無法回應您的問題，請稍後再試。"
-
-#     except Exception as e:
-#         # 處理未知錯誤
-#         print(f"未知錯誤: {e}")
-#         return "抱歉，我無法回應您的問題，請稍後再試。"
-
-
-
-# #---------------------------------------------------
 def extract_stock_id(user_input: str) -> str:
     """
-    從使用者輸入中提取股票代號。
-    股票代號應為 4~6 位的數字。
+    請求 OpenAI API 提取股票代號。
     """
-    match = re.search(r'\b\d{4,6}\b', user_input)
-    return match.group(0) if match else None
+    # 如果沒有找到，請求 OpenAI API 協助提取
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",  # 或其他你設定的模型
+            messages=[
+                {"role": "system", "content": "你是一個可以提取股票代號的助手。"},
+                {"role": "user", "content": f"請從這段文字中提取股票代號：{user_input}，沒有的話不要回傳數字"}
+            ]
+        )
+        # 從 API 回應中提取文字
+        ai_response = response.choices[0].message.content
+        match = re.search(r'\b\d{4,6}\b', ai_response)
+        return match.group(0) if match else None
+    except Exception as e:
+        print(f"Error contacting OpenAI API: {e}")
+        return None
 
 def get_stock_info(stock_id: str) -> str:
     """
@@ -52,9 +35,9 @@ def get_stock_info(stock_id: str) -> str:
     """
     try:
         stock = twstock.Stock(stock_id)
-        recent_dates = stock.date[-5:]   # 近五日日期
-        recent_prices = stock.price[-5:]  # 近五日收盤價
-        recent_highs = stock.high[-5:]    # 近五日高點
+        recent_dates = stock.date[-25:]   # 近五日日期
+        recent_prices = stock.price[-25:]  # 近五日收盤價
+        recent_highs = stock.high[-25:]    # 近五日高點
 
         if None in recent_prices or None in recent_highs:
             return f"抱歉，無法取得 {stock_id} 的完整數據，請稍後再試。"
@@ -78,7 +61,7 @@ def process_user_input(user_input: str) -> str:
         # 查詢股票資訊
         stock_info = get_stock_info(stock_id)
         # 傳遞股票資訊給 GPT 分析
-        return chat_with_gpt(f"以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出地要的資訊，再提供專業的分析或建議。")
+        return chat_with_gpt(f"以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出你覺得重要或是與用者需要的資訊，再提供專業的分析或建議。")
     else:
         # 若未偵測到股票代號，直接詢問 GPT
         return chat_with_gpt(user_input)
