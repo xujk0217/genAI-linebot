@@ -26,7 +26,9 @@ def extract_stock_id(user_input: str) -> str:
             messages=[
                 {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。"},
                 {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容提到的公司回答該公司的股票代號：{user_input}，如果沒有找到與公司相關的資訊的話，不要回傳數字"}
-            ]
+            ],
+            max_tokens=1000,
+            temperature=0.7
         )
         # 從 API 回應中提取文字
         ai_response = response.choices[0].message.content
@@ -69,7 +71,7 @@ def process_user_input(user_input: str) -> str:
         # 查詢股票資訊
         stock_info = get_stock_info(stock_id)
         # 傳遞股票資訊給 GPT 分析
-        return chat_with_gpt(f"以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出資訊，再提供專業的分析或建議。")
+        return chat_with_gpt(f"使用者輸入：{user_input}。以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出資訊，再提供專業的分析或建議，並回答使用者問題。")
     else:
         # 若未偵測到股票代號，直接詢問 GPT
         return chat_with_gpt(user_input)
