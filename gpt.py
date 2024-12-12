@@ -78,7 +78,7 @@ def process_user_input(user_input: str) -> str:
         # 查詢股票資訊
         stock_info = get_stock_info(stock_id)
         # 傳遞股票資訊給 GPT 分析
-        return chat_with_gpt(f"以下是股票 {stock_id} 的資訊：\n{stock_info}\n請提供專業的分析或建議。")
+        return chat_with_gpt(f"以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出地要的資訊，再提供專業的分析或建議。")
     else:
         # 若未偵測到股票代號，直接詢問 GPT
         return chat_with_gpt(user_input)
