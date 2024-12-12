@@ -3,3 +3,4 @@ openai
 flask
 line-bot-sdk
 twstock
+lxml
