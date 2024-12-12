@@ -9,6 +9,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage
 from linebot.exceptions import InvalidSignatureError
 from gpt import chat_with_gpt
+from gpt import process_user_input
 import logging
 
 # 加載 .env 文件中的變數
@@ -59,7 +60,7 @@ def handle_message(event: Event):
         app.logger.info(f"收到的訊息: {user_message}")
 
         # 使用 GPT 生成回應
-        reply_text = chat_with_gpt(user_message)
+        reply_text = process_user_input(user_message)
 
         line_bot_api.reply_message(
             event.reply_token,
