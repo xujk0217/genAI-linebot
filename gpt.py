@@ -22,12 +22,12 @@ def extract_stock_id(user_input: str) -> list:
     # 如果沒有找到，請求 OpenAI API 協助提取
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",  # 或其他你設定的模型
+            model="gpt-4o-mini",  # 或其他你設定的模型
             messages=[
                 {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。功能一：提取句子中的數字，或是，功能二：回答句子中提及的可辨識的公司的股票代號，只輸出純數字"},
                 {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容回答提到的公司的股票代號：{user_input}；如果沒有找到與公司相關的股票資訊的話，回傳“None”"}
             ],
-            max_tokens=1000,
+            max_tokens=100,
             temperature=0.7
         )
         # 從 API 回應中提取文字
@@ -87,9 +87,9 @@ def chat_with_gpt(prompt: str) -> str:
     """
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "你是一個使用繁體中文的聊天機器人，會回答股票相關的問題。"},
+                {"role": "system", "content": "你是一個使用繁體中文的聊天機器人，會回答股票相關的問題。若是沒有收到股票資訊，可以建議使用者透過股票代碼搜尋。"},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
