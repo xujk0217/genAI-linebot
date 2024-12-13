@@ -24,8 +24,8 @@ def extract_stock_id(user_input: str) -> str:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",  # 或其他你設定的模型
             messages=[
-                {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。"},
-                {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容提到的公司回答該公司的股票代號：{user_input}，並只回傳股票代碼的數字，如”2330“；如果沒有找到與公司相關的股票資訊的話，不要回傳數字"}
+                {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。功能一：提取句子中的數字，功能二：回答句子中提及的可辨識的公司的股票代號，只回傳股票代碼的數字，如”2330“就好，不要回傳多餘的東西。"},
+                {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容回答提到的公司的股票代號：{user_input}；如果沒有找到與公司相關的股票資訊的話，不要回傳數字"}
             ],
             max_tokens=1000,
             temperature=0.7
