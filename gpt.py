@@ -25,7 +25,7 @@ def extract_stock_id(user_input: str) -> str:
             model="gpt-3.5-turbo",  # 或其他你設定的模型
             messages=[
                 {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。"},
-                {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容提到的公司回答該公司的股票代號：{user_input}，如果沒有找到與公司相關的資訊的話，不要回傳數字"}
+                {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容提到的公司回答該公司的股票代號：{user_input}，並只回傳股票代碼的數字，如”2330“；如果沒有找到與公司相關的股票資訊的話，不要回傳數字"}
             ],
             max_tokens=1000,
             temperature=0.7
@@ -45,9 +45,9 @@ def get_stock_info(stock_id: str) -> str:
     """
     try:
         stock = twstock.Stock(stock_id)
-        recent_dates = stock.date[-25:]   # 近五日日期
-        recent_prices = stock.price[-25:]  # 近五日收盤價
-        recent_highs = stock.high[-25:]    # 近五日高點
+        recent_dates = stock.date[-30:]
+        recent_prices = stock.price[-30:]
+        recent_highs = stock.high[-30:]
 
         if None in recent_prices or None in recent_highs:
             return f"抱歉，無法取得 {stock_id} 的完整數據，請稍後再試。"
