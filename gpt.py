@@ -17,7 +17,7 @@ def extract_stock_id(user_input: str) -> list:
     # 嘗試從使用者輸入中提取股票代號
     match = re.findall(r'\b\d{4,6}\b', user_input)
     if match:
-        return match.group(0)
+        return match
 
     # 如果沒有找到，請求 OpenAI API 協助提取
     try:
@@ -35,7 +35,7 @@ def extract_stock_id(user_input: str) -> list:
         print(f"OpenAI API response: {ai_response}")
         # return ai_response # 調試輸出
         match = re.findall(r'\b\d{4,6}\b', ai_response)
-        return match.group(0) if match else None
+        return match if match else None
     except Exception as e:
         print(f"Error contacting OpenAI API: {e}")
         return None
@@ -71,8 +71,8 @@ def process_user_input(user_input: str) -> str:
     if stock_id:
         # 查詢股票資訊
         stock_info = ''
-        for i in range(len(stock_id)):
-            stock_info += get_stock_info(stock_id)
+        for sid in stock_id:
+            stock_info += get_stock_info(sid) + '\n'
         # 傳遞股票資訊給 GPT 分析
         return chat_with_gpt(f"使用者輸入：{user_input}。以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出資訊，再提供專業的分析或建議，並回答使用者問題。")
     else:
