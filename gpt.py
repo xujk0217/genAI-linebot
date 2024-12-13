@@ -15,7 +15,7 @@ def extract_stock_id(user_input: str) -> list:
     如果沒有找到，請求 OpenAI API 提取股票代號。
     """
     # 嘗試從使用者輸入中提取股票代號
-    match = re.findall(r'\b\d{4,6}\b', user_input)
+    match = re.findall(r'\d{4,6}', user_input)
     if match:
         return match
 
@@ -24,19 +24,19 @@ def extract_stock_id(user_input: str) -> list:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",  # 或其他你設定的模型
             messages=[
-                {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。功能一：提取句子中的數字，或是，功能二：回答句子中提及的可辨識的公司的股票代號，只輸出純數字，禁止添加任何其他文字。"},
+                {"role": "system", "content": "你是一個可以提取與辨識公司股票代號的助手。功能一：提取句子中的數字，或是，功能二：回答句子中提及的可辨識的公司的股票代號，只輸出純數字"},
                 {"role": "user", "content": f"請從這段文字中提取股票代號或是依據內容回答提到的公司的股票代號：{user_input}；如果沒有找到與公司相關的股票資訊的話，回傳“None”"}
             ],
             max_tokens=1000,
-            temperature=0
+            temperature=0.7
         )
         # 從 API 回應中提取文字
         ai_response = response.choices[0].message.content
-        print(f"OpenAI API response: {ai_response}")
-        test = [0]
-        test[0] = ai_response
-        return test  # 調試輸出
-        match = re.findall(r'\b\d{4,6}\b', ai_response)
+        # print(f"OpenAI API response: {ai_response}")
+        # test = [0]
+        # test[0] = ai_response
+        # return test  # 調試輸出
+        match = re.findall(r'\d{4,6}', ai_response)
         return match if match else None
     except Exception as e:
         print(f"Error contacting OpenAI API: {e}")
@@ -69,7 +69,7 @@ def process_user_input(user_input: str) -> str:
     """
     # 提取股票代號
     stock_id = extract_stock_id(user_input)
-    return stock_id[0] # 調試輸出
+    # return stock_id[0] # 調試輸出
     if stock_id:
         # 查詢股票資訊
         stock_info = ''
