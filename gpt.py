@@ -8,7 +8,7 @@ import re
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def extract_stock_id(user_input: str) -> str:
+def extract_stock_id(user_input: str) -> list:
     """
     從使用者輸入中提取股票代號。
     股票代號應為 4~6 位的數字。
@@ -70,7 +70,9 @@ def process_user_input(user_input: str) -> str:
     # return stock_id # 調試輸出
     if stock_id:
         # 查詢股票資訊
-        stock_info = get_stock_info(stock_id)
+        stock_info = ''
+        for i in range(len(stock_id)):
+            stock_info += get_stock_info(stock_id)
         # 傳遞股票資訊給 GPT 分析
         return chat_with_gpt(f"使用者輸入：{user_input}。以下是股票 {stock_id} 的資訊：\n{stock_info}\n。請先按照格式輸出資訊，再提供專業的分析或建議，並回答使用者問題。")
     else:
