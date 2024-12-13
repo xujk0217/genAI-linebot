@@ -33,7 +33,9 @@ def extract_stock_id(user_input: str) -> list:
         # 從 API 回應中提取文字
         ai_response = response.choices[0].message.content
         print(f"OpenAI API response: {ai_response}")
-        # return ai_response # 調試輸出
+        test = [0]
+        test[0] = ai_response
+        return test  # 調試輸出
         match = re.findall(r'\b\d{4,6}\b', ai_response)
         return match if match else None
     except Exception as e:
@@ -67,7 +69,7 @@ def process_user_input(user_input: str) -> str:
     """
     # 提取股票代號
     stock_id = extract_stock_id(user_input)
-    # return stock_id # 調試輸出
+    return stock_id[0] # 調試輸出
     if stock_id:
         # 查詢股票資訊
         stock_info = ''
