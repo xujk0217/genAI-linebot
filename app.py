@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi
+from linebot.v3.messaging import MessagingApi, ReplyMessageRequest as Reply
 from linebot.v3.webhook import WebhookHandler, Event
+from linebot.v3.webhooks import TextMessageContent, ImageMessageContent
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
 from linebot import LineBotApi, WebhookHandler
@@ -32,6 +33,7 @@ cloudinary.config(
 # 從環境變數中讀取 LINE 的 Channel Access Token 和 Channel Secret
 line_token = os.getenv('LINE_TOKEN')
 line_secret = os.getenv('LINE_SECRET')
+messaging_api = MessagingApi(channel_access_token=line_token)
 
 # 檢查是否設置了環境變數
 if not line_token or not line_secret:
@@ -107,20 +109,28 @@ def handle_message(event: Event):
 
             image_url = upload_to_cloudinary(fn, public_id=f"stocks/{sid}")
             if image_url:
-                image_message = ImageSendMessage(original_content_url=image_url, preview_image_url=image_url)
+                image_message = ImageMessageContent(original_content_url=image_url, preview_image_url=image_url)
             else:
                 # 上傳失敗處理
-                image_message = (TextMessage(text="圖片上傳失敗，請稍後再試。"))
+                image_message = TextMessageContent(text="圖片上傳失敗，請稍後再試。")
 
             # 刪除本地圖片文件
             if os.path.exists(fn):
                 os.remove(fn)
+        
+        reply_request = Reply(
+            reply_token=event.reply_token,
+            messages=[
+                TextMessageContent(text=reply_text),
+                image_message
+            ]
+        )
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextMessage(text=reply_text),
-            image_message
-        )   
+        # line_bot_api.reply_message(
+        #     event.reply_token,
+        #     TextMessage(text=reply_text),
+        #     image_message
+        # )   
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
