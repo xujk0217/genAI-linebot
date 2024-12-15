@@ -8,6 +8,7 @@ from linebot.v3.messaging.models import TextMessage
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage
 from linebot.exceptions import InvalidSignatureError
+from linebot.models import ImageSendMessage
 from gpt import process_user_input
 from gpt import extract_stock_id
 from twstock import Stock
@@ -76,19 +77,30 @@ def handle_message(event: Event):
         stock_id = extract_stock_id(user_message)
         for sid in stock_id:
             stock = Stock(sid)
-            stock.fetch_from(2022, 1)
-            df = pd.DataFrame(stock.data)
-            df = df[['date', 'high']]
-            df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-            df = df.set_index('date')
-            df.plot()
-            plt.savefig('stock.png')
-            client = ImgurClient(os.getenv('IMGUR_CLIENT_ID'), os.getenv('IMGUR_CLIENT_SECRET'), os.getenv('IMGUR_ACCESS_TOKEN'), os.getenv('IMGUR_REFRESH_TOKEN'))
-            image = client.upload_from_path('stock.png', anon=True)
+            fn = '%s.png' % (sid)
+            stock = Stock(sid)
+            stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high, 'low': stock.low, 'open': stock.open}
+            df = pd.DataFrame.from_dict(stock_data)
+
+            df.plot(x='date', y='close')
+            plt.title(f'{sid} five-day stock price')
+            plt.savefig(fn)
+            plt.close()
+
+            client_id = 'your imgur client_id'
+            client_secret = 'your imgur client_secret'
+
+            client = ImgurClient(client_id, client_secret)
+
+            image = client.upload_from_path(fn, anon=True)
+            url = image['link']
+            image_message = ImageSendMessage(
+                original_content_url=url,
+                preview_image_url=url
+            )
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessage(text=f"股票代號：{sid}\n近五日數據：\n{df}\n",
-                             image_url=image['link'])
+                image_message
             )
                 
 # 應用程序入口點
