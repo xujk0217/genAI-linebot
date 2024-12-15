@@ -141,7 +141,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
-                    quoteToken=quoteToken
+                    quoteToken=event.reply_token
                     )
             )   
 # 應用程序入口點
