@@ -33,7 +33,6 @@ cloudinary.config(
 # 從環境變數中讀取 LINE 的 Channel Access Token 和 Channel Secret
 line_token = os.getenv('LINE_TOKEN')
 line_secret = os.getenv('LINE_SECRET')
-messaging_api = MessagingApi(channel_access_token='H0wXnsBl8h77RLYZMNNJ94ipOjYzpoTAjlLCWdONpHJUjciWurDxvC8HmcxCsPsKVeFRd9qAiPNKQU3L2zyY2UhFj8mJ9v9fmY8KJx4GNVCHJ9A1sxfQPepJZa+plO+KXLHzXVtASmusfUuMuAWXEQdB04t89/1O/w1cDnyilFU=')
 
 # 檢查是否設置了環境變數
 if not line_token or not line_secret:
@@ -129,7 +128,7 @@ def handle_message(event: Event):
                 # 刪除本地圖片文件
                 if os.path.exists(fn):
                     os.remove(fn)
-            messaging_api.reply_message(
+            line_bot_api.reply_message(
                 event.reply_token,
                 TextMessageContent(
                     id=event.message.id,
@@ -139,7 +138,7 @@ def handle_message(event: Event):
                 image_message
             )   
         except Exception as e:
-            messaging_api.reply_message(
+            line_bot_api.reply_message(
                 event.reply_token,
                 TextMessageContent(
                     id=event.message.id,
