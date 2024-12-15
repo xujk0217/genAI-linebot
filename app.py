@@ -9,6 +9,13 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage
 from linebot.exceptions import InvalidSignatureError
 from gpt import process_user_input
+from gpt import extract_stock_id
+from twstock import Stock
+import matplotlib
+matplotlib.use('Agg')  # For server compatibility
+import matplotlib.pyplot as plt
+import pandas as pd
+from imgurpython import ImgurClient
 import logging
 
 # 加載 .env 文件中的變數
@@ -65,6 +72,28 @@ def handle_message(event: Event):
             event.reply_token,
             TextMessage(text=reply_text)
         )
+
+        stock_id = extract_stock_id(user_message)
+        if stock_id:
+            for sid in stock_id:
+                fn = f"{sid}.png"
+                stock = Stock(sid)
+                stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high}
+                df1 = pd.DataFrame(stock_data)
+                df1.plot(x='date', y='close', title=f"{sid} 近五日收盤價", ylabel='價格', xlabel='日期')
+                plt.savefig(fn)
+                plt.close()
+                client_id = os.getenv('IMGUR_CLIENT_ID')
+                client_secret = os.getenv('IMGUR_CLIENT_SECRET')
+                client = ImgurClient(client_id, client_secret)
+                image = client.upload_from_path(fn, anon=True)
+                image_url = image['link']
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextMessage(text=f"近五日收盤價圖表：{image_url}")
+                )
+                os.remove(fn)
+                
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)

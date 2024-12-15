@@ -4,3 +4,11 @@ flask
 line-bot-sdk
 twstock
 lxml
+gunicorn
+pymongo
+imgurpython
+requests
+numpy
+matplotlib
+twstock
+pandas
