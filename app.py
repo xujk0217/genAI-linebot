@@ -87,8 +87,8 @@ def handle_message(event: Event):
             plt.savefig(fn)
             plt.close()
 
-            client_id = 'your imgur client_id'
-            client_secret = 'your imgur client_secret'
+            client_id = os.getenv('IMGUR_CLIENT_ID')
+            client_secret = os.getenv('IMGUR_CLIENT_SECRET')
 
             client = ImgurClient(client_id, client_secret)
 
