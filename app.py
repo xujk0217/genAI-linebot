@@ -74,40 +74,22 @@ def handle_message(event: Event):
         )
 
         stock_id = extract_stock_id(user_message)
-        if stock_id:
-            try:
-                for sid in stock_id:
-                    line_bot_api.reply_message(
-                        event.reply_token,
-                        TextMessage(text=f"正在處理股票代號 {sid} 的資訊，請稍後...")
-                    )
-                    fn = f"{sid}.png"
-                    stock = Stock(sid)
-                    stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high}
-                    df = pd.DataFrame(stock_data)
-                    df.plot(x='date', y='close', title=f"{sid} Last 5 Days Closing Prices", ylabel='Price', xlabel='Date')
-                    plt.xticks(rotation=45)  # Rotate date labels
-                    plt.tight_layout()  # Avoid label overlap
-                    plt.savefig(fn)
-                    plt.close()
-
-                    client_id = os.getenv('IMGUR_CLIENT_ID')
-                    client_secret = os.getenv('IMGUR_CLIENT_SECRET')
-
-                    client = ImgurClient(client_id, client_secret)
-                    image = client.upload_from_path(fn, anon=True)
-                    image_url = image['link']
-                    line_bot_api.reply_message(
-                        event.reply_token,
-                        TextMessage(text=f"近五日收盤價圖表：{image_url}")
-                    )
-                    os.remove(fn)
-            except Exception as e:
-                # Catch any errors and notify the user
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextMessage(text=f"An error occurred while processing stock ID {sid}: {str(e)}")
-                )
+        for sid in stock_id:
+            stock = Stock(sid)
+            stock.fetch_from(2022, 1)
+            df = pd.DataFrame(stock.data)
+            df = df[['date', 'high']]
+            df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+            df = df.set_index('date')
+            df.plot()
+            plt.savefig('stock.png')
+            client = ImgurClient(os.getenv('IMGUR_CLIENT_ID'), os.getenv('IMGUR_CLIENT_SECRET'), os.getenv('IMGUR_ACCESS_TOKEN'), os.getenv('IMGUR_REFRESH_TOKEN'))
+            image = client.upload_from_path('stock.png', anon=True)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextMessage(text=f"股票代號：{sid}\n近五日數據：\n{df}\n",
+                             image_url=image['link'])
+            )
                 
 # 應用程序入口點
 if __name__ == "__main__":
