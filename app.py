@@ -121,7 +121,7 @@ def handle_message(event: Event):
                     image_message = (TextMessageContent(
                         id=event.message.id,
                         text="圖片上傳失敗，請稍後再試。",
-                        quoteToken=None
+                        quoteToken=event.message.id
                         ))
 
                 # 刪除本地圖片文件
@@ -132,7 +132,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
-                    quoteToken=None
+                    quoteToken=event.message.id
                     ),
                 image_message
             )   
@@ -142,7 +142,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
-                    quoteToken=None
+                    quoteToken=event.message.id
                     )
             )   
 # 應用程序入口點
