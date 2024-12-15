@@ -110,23 +110,40 @@ def handle_message(event: Event):
 
                 image_url = upload_to_cloudinary(fn, public_id=f"stocks/{sid}")
                 if image_url:
-                    image_message = ImageSendMessage(original_content_url=image_url, preview_image_url=image_url)
+                    image_message = ImageMessageContent(
+                        id=event.message.id,
+                        original_content_url=image_url, 
+                        preview_image_url=image_url,
+                        quoteToken=None
+                        )
                 else:
                     # 上傳失敗處理
-                    image_message = (TextMessage(text="圖片上傳失敗，請稍後再試。"))
+                    image_message = (TextMessageContent(
+                        id=event.message.id,
+                        text="圖片上傳失敗，請稍後再試。",
+                        quoteToken=None
+                        ))
 
                 # 刪除本地圖片文件
                 if os.path.exists(fn):
                     os.remove(fn)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessageContent(text=reply_text),
+                TextMessageContent(
+                    id=event.message.id,
+                    text=reply_text,
+                    quoteToken=None
+                    ),
                 image_message
             )   
         except Exception as e:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessageContent(text=reply_text)
+                TextMessageContent(
+                    id=event.message.id,
+                    text=reply_text,
+                    quoteToken=None
+                    )
             )   
 # 應用程序入口點
 if __name__ == "__main__":
