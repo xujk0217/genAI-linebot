@@ -69,10 +69,10 @@ def handle_message(event: Event):
         # 使用 GPT 生成回應
         reply_text = process_user_input(user_message)
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextMessage(text=reply_text)
-        )
+        # line_bot_api.reply_message(
+        #     event.reply_token,
+        #     TextMessage(text=reply_text)
+        # )
 
         stock_id = extract_stock_id(user_message)
         for sid in stock_id:
@@ -98,11 +98,11 @@ def handle_message(event: Event):
                 original_content_url=url,
                 preview_image_url=url
             )
-            line_bot_api.reply_message(
-                event.reply_token,
-                image_message
-            )
-                
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextMessage(text=reply_text),
+            image_message
+        )   
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
