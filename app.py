@@ -75,24 +75,35 @@ def handle_message(event: Event):
 
         stock_id = extract_stock_id(user_message)
         if stock_id:
-            for sid in stock_id:
-                fn = f"{sid}.png"
-                stock = Stock(sid)
-                stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high}
-                df1 = pd.DataFrame(stock_data)
-                df1.plot(x='date', y='close', title=f"{sid} 近五日收盤價", ylabel='價格', xlabel='日期')
-                plt.savefig(fn)
-                plt.close()
-                client_id = os.getenv('IMGUR_CLIENT_ID')
-                client_secret = os.getenv('IMGUR_CLIENT_SECRET')
-                client = ImgurClient(client_id, client_secret)
-                image = client.upload_from_path(fn, anon=True)
-                image_url = image['link']
+            try:
+                for sid in stock_id:
+                    fn = f"{sid}.png"
+                    stock = Stock(sid)
+                    stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high}
+                    df = pd.DataFrame(stock_data)
+                    df.plot(x='date', y='close', title=f"{sid} Last 5 Days Closing Prices", ylabel='Price', xlabel='Date')
+                    plt.xticks(rotation=45)  # Rotate date labels
+                    plt.tight_layout()  # Avoid label overlap
+                    plt.savefig(fn)
+                    plt.close()
+
+                    client_id = os.getenv('IMGUR_CLIENT_ID')
+                    client_secret = os.getenv('IMGUR_CLIENT_SECRET')
+
+                    client = ImgurClient(client_id, client_secret)
+                    image = client.upload_from_path(fn, anon=True)
+                    image_url = image['link']
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextMessage(text=f"近五日收盤價圖表：{image_url}")
+                    )
+                    os.remove(fn)
+            except Exception as e:
+                # Catch any errors and notify the user
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextMessage(text=f"近五日收盤價圖表：{image_url}")
+                    TextMessage(text=f"An error occurred while processing stock ID {sid}: {str(e)}")
                 )
-                os.remove(fn)
                 
 # 應用程序入口點
 if __name__ == "__main__":
