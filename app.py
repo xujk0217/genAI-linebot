@@ -1,25 +1,20 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi, ReplyMessageRequest as Reply
-from linebot.v3.webhook import WebhookHandler, Event
+from linebot.v3.messaging import MessagingApi, ReplyMessageRequest
+from linebot.v3.webhooks import WebhookHandler, Event
 from linebot.v3.webhooks import TextMessageContent, ImageMessageContent
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import ImageSendMessage
-from gpt import process_user_input
 import cloudinary
 import cloudinary.uploader
-from gpt import extract_stock_id
+from gpt import process_user_input, extract_stock_id
 from twstock import Stock
 import matplotlib
 matplotlib.use('Agg')  # For server compatibility
 import matplotlib.pyplot as plt
 import pandas as pd
-from imgurpython import ImgurClient
+import io
 import logging
 
 # 加載 .env 文件中的變數
@@ -41,8 +36,7 @@ if not line_token or not line_secret:
     print(f"LINE_SECRET: {line_secret}")  # 調試輸出
     raise ValueError("LINE_TOKEN 或 LINE_SECRET 未設置")
 
-# 初始化 LineBotApi 和 WebhookHandler
-line_bot_api = LineBotApi(line_token)
+# 初始化 WebhookHandler
 handler = WebhookHandler(line_secret)
 
 # 創建 Flask 應用
@@ -54,7 +48,7 @@ app.logger.setLevel(logging.DEBUG)
 @app.route("/", methods=['POST'])
 def callback():
     # 取得 X-Line-Signature 標頭
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers.get('X-Line-Signature')
 
     # 取得請求的原始內容
     body = request.get_data(as_text=True)
@@ -68,69 +62,70 @@ def callback():
 
     return 'OK'
 
-def upload_to_cloudinary(file_path, public_id=None):
+def upload_to_cloudinary(image_data, public_id=None):
     """上傳圖片到 Cloudinary 並返回 URL"""
     try:
-        response = cloudinary.uploader.upload(file_path, public_id=public_id)
+        response = cloudinary.uploader.upload(image_data, public_id=public_id)
         return response['secure_url']  # 使用 HTTPS 的 URL
     except Exception as e:
-        print(f"圖片上傳失敗: {e}")
+        app.logger.error(f"圖片上傳失敗: {e}")
         return None
-    
-
 
 # 設置一個事件處理器來處理 TextMessage 事件
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(Event)
 def handle_message(event: Event):
-    if event.message.type == "text":
+    if isinstance(event.message, TextMessageContent):
         user_message = event.message.text  # 使用者的訊息
         app.logger.info(f"收到的訊息: {user_message}")
 
         # 使用 GPT 生成回應
         reply_text = process_user_input(user_message)
 
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     TextMessage(text=reply_text)
-        # )
-
+        # 處理股票代碼並生成圖片
         stock_id = extract_stock_id(user_message)
+        messages = [TextMessageContent(text=reply_text)]  # 儲存回應訊息
+
         for sid in stock_id:
             stock = Stock(sid)
-            fn = '%s.png' % (sid)
-            stock = Stock(sid)
-            stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high, 'low': stock.low, 'open': stock.open}
+            stock_data = {
+                'date': stock.date,
+                'open': stock.open,
+                'high': stock.high,
+                'low': stock.low,
+                'close': stock.close
+            }
             df = pd.DataFrame.from_dict(stock_data)
 
+            # 繪製圖片
+            plt.figure(figsize=(10, 5))
             df.plot(x='date', y='close')
             plt.title(f'{sid} five-day stock price')
-            plt.savefig(fn)
+            plt.xlabel('Date')
+            plt.ylabel('Close Price')
+
+            # 保存圖片至 BytesIO
+            image_buffer = io.BytesIO()
+            plt.savefig(image_buffer, format='png')
             plt.close()
+            image_buffer.seek(0)
 
-            image_url = upload_to_cloudinary(fn, public_id=f"stocks/{sid}")
+            # 上傳到 Cloudinary
+            image_url = upload_to_cloudinary(image_buffer, public_id=f"stocks/{sid}")
             if image_url:
-                image_message = ImageMessageContent(original_content_url=image_url, preview_image_url=image_url)
+                messages.append(ImageMessageContent(
+                    original_content_url=image_url,
+                    preview_image_url=image_url
+                ))
             else:
-                # 上傳失敗處理
-                image_message = TextMessageContent(text="圖片上傳失敗，請稍後再試。")
+                messages.append(TextMessageContent(text=f"無法生成 {sid} 的圖片，請稍後再試。"))
 
-            # 刪除本地圖片文件
-            if os.path.exists(fn):
-                os.remove(fn)
-        
-        reply_request = Reply(
+        # 發送回應
+        reply_request = ReplyMessageRequest(
             reply_token=event.reply_token,
-            messages=[
-                TextMessageContent(text=reply_text),
-                image_message
-            ]
+            messages=messages
         )
+        messaging_api.reply_message(reply_request)
 
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     TextMessage(text=reply_text),
-        #     image_message
-        # )   
 # 應用程序入口點
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
