@@ -114,13 +114,14 @@ def handle_message(event: Event):
                         id=event.message.id,
                         original_content_url=image_url, 
                         preview_image_url=image_url,
-                        contentProvider={"type": "image", "id": "content_provider_id"}
+                        contentProvider={"type": "line", "id": "content_provider_id"}
                         )
                 else:
                     # 上傳失敗處理
                     image_message = (TextMessageContent(
                         id=event.message.id,
                         text="圖片上傳失敗，請稍後再試。",
+                        quoteToken=None
                         ))
 
                 # 刪除本地圖片文件
@@ -131,6 +132,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
+                    quoteToken=None
                     ),
                 image_message
             )   
@@ -140,6 +142,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
+                    quoteToken=None
                     )
             )   
 # 應用程序入口點
