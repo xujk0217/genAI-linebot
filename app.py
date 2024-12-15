@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
+from linebot.v3.webhooks import TextMessageContent, ImageMessageContent
 from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
@@ -32,6 +33,7 @@ cloudinary.config(
 # 從環境變數中讀取 LINE 的 Channel Access Token 和 Channel Secret
 line_token = os.getenv('LINE_TOKEN')
 line_secret = os.getenv('LINE_SECRET')
+line_bot_api = LineBotApi(channel_access_token=line_token)
 
 # 檢查是否設置了環境變數
 if not line_token or not line_secret:
@@ -118,13 +120,13 @@ def handle_message(event: Event):
                     os.remove(fn)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessage(text=reply_text),
+                TextMessageContent(text=reply_text),
                 image_message
             )   
         except Exception as e:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextMessage(text=reply_text)
+                TextMessageContent(text=reply_text)
             )   
 # 應用程序入口點
 if __name__ == "__main__":
