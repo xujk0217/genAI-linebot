@@ -2,27 +2,20 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
-from linebot.v3.webhooks import TextMessageContent, ImageMessageContent
-from linebot.v3.webhook import WebhookHandler, Event
+from linebot.v3.webhooks import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging.models import TextMessage
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import ImageSendMessage
-from gpt import process_user_input
+from linebot.models import TextSendMessage, ImageSendMessage, MessageEvent, TextMessage
+from gpt import process_user_input, extract_stock_id
 import cloudinary
 import cloudinary.uploader
-from gpt import extract_stock_id
 from twstock import Stock
 import matplotlib
 matplotlib.use('Agg')  # For server compatibility
 import matplotlib.pyplot as plt
 import pandas as pd
-from imgurpython import ImgurClient
 import logging
 
-# 加載 .env 文件中的變數
+# Load .env variables
 load_dotenv()
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
@@ -30,36 +23,28 @@ cloudinary.config(
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
-# 從環境變數中讀取 LINE 的 Channel Access Token 和 Channel Secret
+# Read LINE Channel Access Token and Channel Secret
 line_token = os.getenv('LINE_TOKEN')
 line_secret = os.getenv('LINE_SECRET')
 
-# 檢查是否設置了環境變數
 if not line_token or not line_secret:
-    print(f"LINE_TOKEN: {line_token}")  # 調試輸出
-    print(f"LINE_SECRET: {line_secret}")  # 調試輸出
-    raise ValueError("LINE_TOKEN 或 LINE_SECRET 未設置")
+    raise ValueError("LINE_TOKEN or LINE_SECRET not set in the environment variables.")
 
-# 初始化 LineBotApi 和 WebhookHandler
-line_bot_api = LineBotApi(line_token)
+# Initialize LINE Messaging API and WebhookHandler
+messaging_api = MessagingApi(channel_access_token=line_token)
 handler = WebhookHandler(line_secret)
 
-# 創建 Flask 應用
+# Create Flask application
 app = Flask(__name__)
-
 app.logger.setLevel(logging.DEBUG)
 
-# 設置一個路由來處理 LINE Webhook 的回調請求
+# Flask route for LINE Webhook
 @app.route("/", methods=['POST'])
 def callback():
-    # 取得 X-Line-Signature 標頭
-    signature = request.headers['X-Line-Signature']
-
-    # 取得請求的原始內容
+    signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
     app.logger.info(f"Request body: {body}")
 
-    # 驗證簽名並處理請求
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -68,82 +53,79 @@ def callback():
     return 'OK'
 
 def upload_to_cloudinary(file_path, public_id=None):
-    """上傳圖片到 Cloudinary 並返回 URL"""
+    """Upload an image to Cloudinary and return its URL."""
     try:
         response = cloudinary.uploader.upload(file_path, public_id=public_id)
-        return response['secure_url']  # 使用 HTTPS 的 URL
+        return response['secure_url']
     except Exception as e:
-        print(f"圖片上傳失敗: {e}")
+        print(f"Image upload failed: {e}")
         return None
-    
 
-
-# 設置一個事件處理器來處理 TextMessage 事件
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event: Event):
-    if event.message.type == "text":
-        user_message = event.message.text  # 使用者的訊息
-        app.logger.info(f"收到的訊息: {user_message}")
+    user_message = event.message.text
+    app.logger.info(f"Received message: {user_message}")
 
-        # 使用 GPT 生成回應
-        reply_text = process_user_input(user_message)
+    # Use GPT to process user input (if needed)
+    reply_text = process_user_input(user_message)
 
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     TextMessage(text=reply_text)
-        # )
+    # Extract stock IDs from user message
+    stock_ids = extract_stock_id(user_message)
 
-        stock_id = extract_stock_id(user_message)
-        try:
-            for sid in stock_id:
-                stock = Stock(sid)
-                fn = '%s.png' % (sid)
-                stock = Stock(sid)
-                stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high, 'low': stock.low, 'open': stock.open}
-                df = pd.DataFrame.from_dict(stock_data)
+    try:
+        reply_messages = []
 
-                df.plot(x='date', y='close')
-                plt.title(f'{sid} five-day stock price')
-                plt.savefig(fn)
-                plt.close()
+        for sid in stock_ids:
+            stock = Stock(sid)
+            file_name = f'{sid}.png'
 
-                image_url = upload_to_cloudinary(fn, public_id=f"stocks/{sid}")
-                if image_url:
-                    image_message = ImageMessageContent(
-                        id=event.message.id,
-                        original_content_url=image_url, 
-                        preview_image_url=image_url,
-                        contentProvider={"type": "line", "id": "content_provider_id"}
-                        )
-                else:
-                    # 上傳失敗處理
-                    image_message = (TextMessageContent(
-                        id=event.message.id,
-                        text="圖片上傳失敗，請稍後再試。",
-                        quoteToken=event.reply_token
-                        ))
+            # Prepare stock data for plotting
+            stock_data = {
+                'close': stock.close,
+                'date': stock.date,
+                'high': stock.high,
+                'low': stock.low,
+                'open': stock.open
+            }
+            df = pd.DataFrame.from_dict(stock_data)
 
-                # 刪除本地圖片文件
-                if os.path.exists(fn):
-                    os.remove(fn)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextMessageContent(
-                    id=event.message.id,
-                    text=reply_text,
-                    quoteToken=event.reply_token
-                    ),
-                image_message
-            )   
-        except Exception as e:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextMessageContent(
-                    id=event.message.id,
-                    text=reply_text,
-                    quoteToken=event.reply_token
-                    )
-            )   
-# 應用程序入口點
+            # Plot stock data
+            df.plot(x='date', y='close')
+            plt.title(f'{sid} five-day stock price')
+            plt.savefig(file_name)
+            plt.close()
+
+            # Upload the image to Cloudinary
+            image_url = upload_to_cloudinary(file_name, public_id=f"stocks/{sid}")
+
+            if image_url:
+                reply_messages.append(ImageSendMessage(
+                    original_content_url=image_url,
+                    preview_image_url=image_url
+                ))
+            else:
+                reply_messages.append(TextSendMessage(text="Image upload failed. Please try again later."))
+
+            # Remove the local file
+            if os.path.exists(file_name):
+                os.remove(file_name)
+
+        # If no stock IDs were processed, send a default reply
+        if not reply_messages:
+            reply_messages.append(TextSendMessage(text="No valid stock IDs found in your message."))
+
+        # Reply to the user
+        messaging_api.reply_message(
+            reply_token=event.reply_token,
+            messages=reply_messages
+        )
+    except Exception as e:
+        app.logger.error(f"Error processing message: {e}")
+        messaging_api.reply_message(
+            reply_token=event.reply_token,
+            messages=[TextSendMessage(text=f"An error occurred: {str(e)}")]
+        )
+
+# Main entry point for the application
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
