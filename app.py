@@ -114,7 +114,7 @@ def handle_message(event: Event):
                         id=event.message.id,
                         original_content_url=image_url, 
                         preview_image_url=image_url,
-                        contentProvider="line"
+                        contentProvider={"type": "image", "id": "content_provider_id"}
                         )
                 else:
                     # 上傳失敗處理
