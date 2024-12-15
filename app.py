@@ -48,7 +48,6 @@ handler = WebhookHandler(line_secret)
 app = Flask(__name__)
 
 app.logger.setLevel(logging.DEBUG)
-quoteToken = None
 
 # 設置一個路由來處理 LINE Webhook 的回調請求
 @app.route("/", methods=['POST'])
@@ -58,7 +57,6 @@ def callback():
 
     # 取得請求的原始內容
     body = request.get_data(as_text=True)
-    quoteToken = body['events'][0]['message']['quoteToken']
     app.logger.info(f"Request body: {body}")
 
     # 驗證簽名並處理請求
@@ -122,7 +120,7 @@ def handle_message(event: Event):
                     image_message = (TextMessageContent(
                         id=event.message.id,
                         text="圖片上傳失敗，請稍後再試。",
-                        quoteToken=quoteToken
+                        quoteToken=event.reply_token
                         ))
 
                 # 刪除本地圖片文件
@@ -133,7 +131,7 @@ def handle_message(event: Event):
                 TextMessageContent(
                     id=event.message.id,
                     text=reply_text,
-                    quoteToken=quoteToken
+                    quoteToken=event.reply_token
                     ),
                 image_message
             )   
