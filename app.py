@@ -77,6 +77,10 @@ def handle_message(event: Event):
         if stock_id:
             try:
                 for sid in stock_id:
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextMessage(text=f"正在處理股票代號 {sid} 的資訊，請稍後...")
+                    )
                     fn = f"{sid}.png"
                     stock = Stock(sid)
                     stock_data = {'close': stock.close, 'date': stock.date, 'high': stock.high}
