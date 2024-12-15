@@ -33,7 +33,7 @@ cloudinary.config(
 # 從環境變數中讀取 LINE 的 Channel Access Token 和 Channel Secret
 line_token = os.getenv('LINE_TOKEN')
 line_secret = os.getenv('LINE_SECRET')
-messaging_api = MessagingApi(channel_secret='YOUR_CHANNEL_SECRET', channel_access_token='YOUR_CHANNEL_ACCESS_TOKEN')
+messaging_api = MessagingApi(channel_secret=line_secret, channel_access_token=line_token)
 
 # 檢查是否設置了環境變數
 if not line_token or not line_secret:
