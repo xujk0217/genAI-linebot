@@ -219,3 +219,10 @@ def chat_with_gpt(prompt: str) -> str:
         return f"GPT API 錯誤: {e}"
     except Exception as e:
         return f"未知錯誤: {e}"
+    
+
+
+def txt_to_img_url(prompt):
+    response = openai.Image.create(prompt=prompt, n=1, 
+                                   size='1024x1024')
+    return response['data'][0]['url']

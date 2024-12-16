@@ -6,10 +6,15 @@ from linebot.v3.webhook import WebhookHandler, Event
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
 from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage
+from linebot.models import (
+    MessageEvent, 
+    TextMessage, 
+    TextSendMessage,
+    ImageSendMessage)
 from linebot.exceptions import InvalidSignatureError
-from gpt import process_user_input
+from gpt import process_user_input, extract_stock_id, txt_to_img_url
 import logging
+import re
 
 # 加載 .env 文件中的變數
 load_dotenv()
@@ -58,12 +63,44 @@ def handle_message(event: Event):
         user_message = event.message.text  # 使用者的訊息
         app.logger.info(f"收到的訊息: {user_message}")
 
+        # 檢查是否包含特定關鍵字
+        if "趨勢圖" in user_message:
+            # 使用 GPT 生成回應
+            stock_ids = extract_stock_id(user_message)
+
+            if stock_ids:
+                # Generate trend chart for the first stock ID
+                stock_id = stock_ids[0]  # Use the first extracted stock ID
+                prompt = f"為股票代號 {stock_id} 畫出最近的趨勢圖"
+                try:
+                    image_url = txt_to_img_url(prompt)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        ImageSendMessage(
+                            original_content_url=image_url,
+                            preview_image_url=image_url
+                        )
+                    )
+                except Exception as e:
+                    error_message = f"抱歉，無法生成股票趨勢圖，錯誤原因：{e}"
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextMessage(text=error_message)
+                    )
+                return
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="未能識別股票代號，請輸入正確的股票名稱或代號。")
+                )
+                return
+
         # 使用 GPT 生成回應
         reply_text = process_user_input(user_message)
 
         line_bot_api.reply_message(
             event.reply_token,
-            TextMessage(text=reply_text)
+            TextSendMessage(text=reply_text)
         )
 # 應用程序入口點
 if __name__ == "__main__":
