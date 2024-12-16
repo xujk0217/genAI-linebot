@@ -71,10 +71,15 @@ def handle_message(event: Event):
             if stock_ids:
                 # Generate trend chart for the first stock ID
                 stock_id = stock_ids[0]  # Use the first extracted stock ID
-                prompt = f"以下為股票代號 {stock_id} 畫出最近的趨勢圖"
                 try:
-                    stockData = get_stock_info(stock_id)
-                    image_url = txt_to_img_url(f"{prompt}\n{stockData}")
+                    image_url = txt_to_img_url(stock_id)
+                    if not image_url:
+                        error_message = f"抱歉，無法生成股票趨勢圖。"
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextMessage(text=error_message)
+                        )
+                        return
                     line_bot_api.reply_message(
                         event.reply_token,
                         ImageSendMessage(

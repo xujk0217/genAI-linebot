@@ -4,9 +4,20 @@ load_dotenv()
 import openai
 import twstock
 import re
-
+import cloudinary
+import cloudinary.uploader
+import matplotlib
+matplotlib.use('Agg')  # For server compatibility
+import matplotlib.pyplot as plt
+import pandas as pd
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+)
 
 default_data = {
     "中油": "6505",
@@ -221,8 +232,45 @@ def chat_with_gpt(prompt: str) -> str:
         return f"未知錯誤: {e}"
     
 
+def upload_to_cloudinary(file_path, public_id=None):
+    """Upload an image to Cloudinary and return its URL."""
+    try:
+        response = cloudinary.uploader.upload(file_path, public_id=public_id)
+        return response['secure_url']
+    except Exception as e:
+        print(f"Image upload failed: {e}")
+        return None
 
-def txt_to_img_url(prompt):
-    response = openai.images.generate(prompt=prompt, n=1, 
-                                   size='1024x1024')
-    return response.data[0].url
+def txt_to_img_url(stock_ids: list):
+    try:
+        sid = stock_ids[0]
+        stock = twstock.stock(sid)
+        file_name = f'{sid}.png'
+
+        # Prepare stock data for plotting
+        stock_data = {
+            'close': stock.close,
+            'date': stock.date,
+            'high': stock.high,
+            'low': stock.low,
+            'open': stock.open
+        }
+        df = pd.DataFrame.from_dict(stock_data)
+
+            # Plot stock data
+        df.plot(x='date', y='close')
+        plt.title(f'{sid} five-day stock price')
+        plt.savefig(file_name)
+        plt.close()
+
+            # Upload the image to Cloudinary
+        image_url = upload_to_cloudinary(file_name, public_id=f"stocks/{sid}")
+
+        if image_url:
+            return image_url
+        else:
+            return None
+
+    except Exception as e:
+        print(f"Error generating stock trend chart: {e}")
+        return None
