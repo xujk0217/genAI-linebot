@@ -167,9 +167,9 @@ def get_stock_info(stock_id: str) -> str:
     """
     try:
         stock = twstock.Stock(stock_id)
-        recent_dates = stock.date[-30:]
-        recent_prices = stock.price[-30:]
-        recent_highs = stock.high[-30:]
+        recent_dates = stock.date[-25:]
+        recent_prices = stock.price[-25:]
+        recent_highs = stock.high[-25:]
 
         if None in recent_prices or None in recent_highs:
             return f"抱歉，無法取得 {stock_id} 的完整數據，請稍後再試。"
