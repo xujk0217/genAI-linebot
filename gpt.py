@@ -223,6 +223,6 @@ def chat_with_gpt(prompt: str) -> str:
 
 
 def txt_to_img_url(prompt):
-    response = openai.Image.create(prompt=prompt, n=1, 
+    response = openai.images.generate(prompt=prompt, n=1, 
                                    size='1024x1024')
     return response['data'][0]['url']
