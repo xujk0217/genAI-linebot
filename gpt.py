@@ -234,10 +234,10 @@ def chat_with_gpt(prompt: str) -> str:
         return f"未知錯誤: {e}"
     
 
-def upload_to_cloudinary(file_path, public_id=None):
+def upload_to_cloudinary(file_path):
     """Upload an image to Cloudinary and return its URL."""
     try:
-        response = cloudinary.uploader.upload(file_path, public_id=public_id)
+        response = cloudinary.uploader.upload(file_path)
         return response['secure_url']
     except Exception as e:
         print(f"Image upload failed: {e}")
@@ -267,7 +267,7 @@ def txt_to_img_url(stock_ids: list):
         plt.close()
 
             # Upload the image to Cloudinary
-        image_url = upload_to_cloudinary(file_name, public_id=f"stocks/{sid}{current_time}")
+        image_url = upload_to_cloudinary(file_name)
 
         if image_url:
             os.remove(file_name)
