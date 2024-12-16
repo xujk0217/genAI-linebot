@@ -10,6 +10,8 @@ import matplotlib
 matplotlib.use('Agg')  # For server compatibility
 import matplotlib.pyplot as plt
 import pandas as pd
+#current time
+from datetime import datetime
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -242,10 +244,11 @@ def upload_to_cloudinary(file_path, public_id=None):
         return None
 
 def txt_to_img_url(stock_ids: list):
+    current_time = datetime.now()
     try:
         sid = stock_ids[0]
-        stock = twstock.stock(sid)
-        file_name = f'{sid}.png'
+        stock = twstock.Stock(sid)
+        file_name = f'{sid}{current_time}.png'
 
         # Prepare stock data for plotting
         stock_data = {
@@ -264,9 +267,10 @@ def txt_to_img_url(stock_ids: list):
         plt.close()
 
             # Upload the image to Cloudinary
-        image_url = upload_to_cloudinary(file_name, public_id=f"stocks/{sid}")
+        image_url = upload_to_cloudinary(file_name, public_id=f"stocks/{sid}{current_time}")
 
         if image_url:
+            os.remove(file_name)
             return image_url
         else:
             return None
