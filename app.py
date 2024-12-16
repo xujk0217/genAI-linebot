@@ -12,7 +12,7 @@ from linebot.models import (
     TextSendMessage,
     ImageSendMessage)
 from linebot.exceptions import InvalidSignatureError
-from gpt import process_user_input, extract_stock_id, txt_to_img_url
+from gpt import process_user_input, extract_stock_id, txt_to_img_url, get_stock_info
 import logging
 import re
 
@@ -71,9 +71,10 @@ def handle_message(event: Event):
             if stock_ids:
                 # Generate trend chart for the first stock ID
                 stock_id = stock_ids[0]  # Use the first extracted stock ID
-                prompt = f"為股票代號 {stock_id} 畫出最近的趨勢圖"
+                prompt = f"以下為股票代號 {stock_id} 畫出最近的趨勢圖"
                 try:
-                    image_url = txt_to_img_url(prompt)
+                    stockData = get_stock_info(stock_id)
+                    image_url = txt_to_img_url(f"{prompt}\n{stockData}")
                     line_bot_api.reply_message(
                         event.reply_token,
                         ImageSendMessage(
