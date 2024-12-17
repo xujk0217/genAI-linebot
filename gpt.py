@@ -234,7 +234,7 @@ def chat_with_gpt(prompt: str) -> str:
         return f"未知錯誤: {e}"
     
 
-def upload_to_cloudinary(file_path):
+def upload_to_cloudinary(file_path) -> str:
     """Upload an image to Cloudinary and return its URL."""
     try:
         response = cloudinary.uploader.upload(file_path)
@@ -244,11 +244,10 @@ def upload_to_cloudinary(file_path):
         return None
 
 def txt_to_img_url(stock_ids: list):
-    current_time = datetime.now()
     try:
-        sid = stock_ids[0]
+        sid = '2330'
         stock = twstock.Stock(sid)
-        file_name = f'{sid}{current_time}.png'
+        file_name = f'{sid}.png'
 
         # Prepare stock data for plotting
         stock_data = {

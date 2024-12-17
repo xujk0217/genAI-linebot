@@ -74,7 +74,7 @@ def handle_message(event: Event):
                 try:
                     image_url = txt_to_img_url(stock_id)
                     if not image_url:
-                        error_message = f"抱歉，無法生成股票趨勢圖。"
+                        error_message = f"抱歉，沒有取得股票趨勢圖，{image_url}。"
                         line_bot_api.reply_message(
                             event.reply_token,
                             TextMessage(text=error_message)
