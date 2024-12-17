@@ -243,9 +243,9 @@ def upload_to_cloudinary(file_path) -> str:
         print(f"Image upload failed: {e}")
         return None
 
-def txt_to_img_url(stock_ids: list) -> str:
+def txt_to_img_url(stock_ids: str) -> str:
     try:
-        sid = stock_ids[0]
+        sid = stock_ids
         stock = twstock.Stock(sid)
         file_name = f'{sid}.png'
 
