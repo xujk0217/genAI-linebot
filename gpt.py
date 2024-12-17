@@ -261,7 +261,7 @@ def txt_to_img_url(stock_ids: str) -> str:
 
             # Plot stock data
         df.plot(x='date', y='close')
-        plt.title(f'{sid} five-day stock price')
+        plt.title(f'{sid} stock price')
         plt.savefig(file_name)
         plt.close()
 
