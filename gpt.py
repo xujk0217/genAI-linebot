@@ -245,7 +245,7 @@ def upload_to_cloudinary(file_path) -> str:
 
 def txt_to_img_url(stock_ids: list):
     try:
-        sid = '2330'
+        sid = stock_ids[0]
         stock = twstock.Stock(sid)
         file_name = f'{sid}.png'
 
